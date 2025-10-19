@@ -27,8 +27,6 @@ const int arduinoBoardLED = 13;		// define as constant integer on pin 13
 
 // Function Declarations & Global Variable associated with Functions
 
-// Functions (I like to instantiate functions at the top above setup())
-
 // ============================================================================
 // The setup routine runs once when you load the sketch or press reset:
 // This is where you define pin directions
@@ -51,3 +49,6 @@ void loop()
 	digitalWrite(arduinoBoardLED, LOW);
 	delay(1000);	//Wait for a second
 }
+
+// ============================================================================
+// Functions (I like to instantiate functions at the bottom below loop())
