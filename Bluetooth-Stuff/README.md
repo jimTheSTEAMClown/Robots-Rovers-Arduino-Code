@@ -1,7 +1,7 @@
 # Bluetooth Stuff
 Hi, this is the start of a Bluetooth Repository of examples to get simple to complex design running on an Arduino
 
-MD Syntax Link ## MD format and tricks 
+MD Syntax Link - MD format and tricks 
 https://www.markdownguide.org/cheat-sheet/
 
 ## Simple Bluetooth Parser - Serial Bluetooth Terminal & a HC-06 Bluetooth board connect to an Arduino
