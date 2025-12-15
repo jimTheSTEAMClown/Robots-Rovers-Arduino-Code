@@ -1,0 +1,131 @@
+// I2C Controller - Pass 2 Bytes Lab#3
+// Target is running Non-Blocked Code.
+// Passing 2 Bytes that are 0-255 and Random to turn on or off 
+// 2 LEDs on the Target Arduino
+// Controller Code
+//
+//I2C Bus Map
+//-----------
+// 0x08  → Arduino Target (LED Controller)
+// 0x20  → PCF8574 (IO Expander)
+
+// Controller Code
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+
+byte i2c_byte_data1 = 77;
+byte i2c_byte_data2 = 255;
+
+void setup() {
+  //Serial.begin(115200);
+  Wire.begin();  // Join I2C bus as Controller
+  randomSeed(analogRead(0));
+}
+
+void loop() {
+  Wire.beginTransmission(TARGET_ADDR);
+  Wire.write(i2c_byte_data1);
+  Wire.write(i2c_byte_data2);
+  Wire.endTransmission();
+
+  // Toggle LED states
+  i2c_byte_data1 = random(0, 256);
+  //Serial.println(i2c_byte_data1);
+  i2c_byte_data2 = random(0, 256);
+  //Serial.println(i2c_byte_data2);
+  
+  delay(1000);
+}
+
+/*
+
+// Target Code
+//
+//I2C Bus Map
+//-----------
+// 0x08  → Arduino Target (LED Controller)
+// 0x20  → PCF8574 (IO Expander)
+
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+#define LED1_PIN 8
+#define LED2_PIN 9
+
+volatile byte i2c_byte_data1 = 0; // 0 to 255
+volatile byte i2c_byte_data2 = 0; // 0 to 255
+volatile bool new_data = false;  // ISR sets this flag
+
+//volatile byte led1State = 0;
+//volatile byte led2State = 0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED1_PIN, OUTPUT);
+  pinMode(LED2_PIN, OUTPUT);
+
+  Wire.begin(TARGET_ADDR);      // Join I2C bus as Target
+  Wire.onReceive(onReceiveEvent);
+  
+  Serial.println(TARGET_ADDR);
+}
+
+void loop() {
+  if(new_data) {
+    /* Why the local copy helps (defensive programming)
+    
+       The issue: “volatile + interrupt overlap”
+       - value1 and value2 are volatile byte globals.
+       - When the Controller sends a new message, the
+         ISR (receiveEvent) runs asynchronously.
+       - Suppose this happens midway through using the 
+         globals in loop():
+       
+       So making a copy of volatile variables to local ones 
+       to prevent ISR interference
+       
+       On 1-byte values, the risk is small:
+       - Reading a byte is atomic on 8-bit AVR (Uno/Nano)
+       - So you won’t get torn reads
+       On multi-byte variables (e.g., int, uint16_t) the read 
+       is non-atomic, and you could get half-updated values.
+       
+       This Guarantees 
+       - a consistent snapshot of the data at one instant.
+       - Avoids potential race conditions if ISR updates 
+         during processing.
+       - Scales safely if you later send 16-bit integers or 
+         arrays
+    */
+      byte local_byte1 = i2c_byte_data1; 
+      byte local_byte2 = i2c_byte_data2;
+
+      Serial.print("Value 1: ");
+      Serial.println(local_byte1);
+      Serial.print("Value 2: ");
+      Serial.println(local_byte2);
+      if(local_byte1 > 127){
+      digitalWrite(LED1_PIN, HIGH);
+    }else{
+      digitalWrite(LED1_PIN, LOW);    
+    }
+    if(local_byte2 > 127){
+      digitalWrite(LED2_PIN, HIGH);
+    }else{
+      digitalWrite(LED2_PIN, LOW);    
+    }
+    new_data = false;
+  }
+}
+
+void onReceiveEvent(int bytesReceived) {
+  if (bytesReceived >= 2) {
+    //Serial.println("got 2 bytes");
+    i2c_byte_data1 = Wire.read();
+    i2c_byte_data2 = Wire.read();
+    new_data = true;
+  }
+}
+
+*/
