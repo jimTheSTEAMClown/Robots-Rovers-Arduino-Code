@@ -1,0 +1,64 @@
+// I2C Target - Lab#1
+// I2C Target - Receive 2 Bytes Lab#1
+// Receiving 2 Bytes that are 1 or 0 to turin on or off 
+// 2 LEDs on the Target Arduino
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+#define LED1_PIN 8
+#define LED2_PIN 9
+
+volatile byte led1State = 0;
+volatile byte led2State = 0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED1_PIN, OUTPUT);
+  pinMode(LED2_PIN, OUTPUT);
+
+  Wire.begin(TARGET_ADDR);      // Join I2C bus as Target
+  Wire.onReceive(onReceiveEvent);
+  
+  Serial.println(TARGET_ADDR);
+}
+
+void loop() {
+  digitalWrite(LED1_PIN, led1State ? HIGH : LOW);
+  digitalWrite(LED2_PIN, led2State ? HIGH : LOW);
+}
+
+void onReceiveEvent(int bytesReceived) {
+  if (bytesReceived >= 2) {
+    led1State = Wire.read();
+    led2State = Wire.read();
+  }
+}
+
+/*
+// I2C Controller - Pass 2 Bytes Lab#1
+// Passing 2 Bytes that are 1 or 0 to turin on or off 
+// 2 LEDs on the Target Arduino
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+
+int led1State = 0;
+int led2State = 1;
+
+void setup() {
+  Wire.begin();  // Join I2C bus as Controller
+}
+
+void loop() {
+  Wire.beginTransmission(TARGET_ADDR);
+  Wire.write(led1State);
+  Wire.write(led2State);
+  Wire.endTransmission();
+
+  // Toggle LED states
+  led1State = !led1State;
+  led2State = !led2State;
+
+  delay(1000);
+}
+*/
