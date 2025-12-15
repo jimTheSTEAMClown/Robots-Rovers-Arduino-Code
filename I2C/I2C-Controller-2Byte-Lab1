@@ -1,5 +1,5 @@
 // I2C Controller - Pass 2 Bytes Lab#1
-// Passing 2 Bytes that are 1 or 0 to turin on or off 
+// Passing 2 Bytes that are 1 or 0 to turn on or off 
 // 2 LEDs on the Target Arduino
 #include <Wire.h>
 
