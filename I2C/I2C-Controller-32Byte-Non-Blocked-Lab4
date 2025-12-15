@@ -1,0 +1,148 @@
+// I2C Controller - Pass 32 Bytes Lab#4
+// Target is running Non-Blocked Code.
+// Passing 32 Bytes that are 0-255 and Random to send over to the Target the 32 Bytes, turn on or off 
+// 2 LEDs on the Target Arduino
+// Controller Code
+//
+//I2C Bus Map
+//-----------
+// 0x08  → Arduino Target (LED Controller)
+// 0x20  → PCF8574 (IO Expander)
+
+// Controller Code
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+#define NUM_BYTES 32
+
+byte i2c_data[NUM_BYTES];  // Array of 32 bytes
+/*
+  // Should probably define what all the byte values are
+  // So a I2C Controller can send byte data to a Target
+  right_motor_IN1 = 0;
+  right_motor_IN2 = 0;
+  left_motor_IN1 = 0;
+  left_motor_IN2 = 0;
+  
+  i2c_data[0] = right_motor_IN1;
+  i2c_data[1] = right_motor_IN2;
+  i2c_data[2] = left_motor_IN1;
+  i2c_data[3] = left_motor_IN2;
+  */
+
+void setup() {
+  //Serial.begin(115200);
+  Wire.begin();  // Join I2C bus as Controller
+  randomSeed(analogRead(0));
+  // Initialize data with random values
+  for (byte i = 0; i < NUM_BYTES; i++) {
+    i2c_data[i] = random(0, 256);
+  }  
+}
+
+void loop() {
+  Wire.beginTransmission(TARGET_ADDR);
+  for (byte i = 0; i < NUM_BYTES; i++) {
+    Wire.write(i2c_data[i]);
+  }
+  Wire.endTransmission();
+  // Update data for next transmission
+  for (byte i = 0; i < NUM_BYTES; i++) {
+    i2c_data[i] = random(0, 256);
+  }  
+  delay(1000);
+}
+
+/*
+// Target Code
+#include <Wire.h>
+
+#define TARGET_ADDR 0x08
+#define NUM_BYTES 32
+#define LED1_PIN 8
+#define LED2_PIN 9
+
+volatile byte i2c_data[NUM_BYTES]; // Array to store received bytes
+volatile bool new_data = false;    // ISR sets this flag
+
+//volatile byte led1State = 0;
+//volatile byte led2State = 0;
+
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED1_PIN, OUTPUT);
+  pinMode(LED2_PIN, OUTPUT);
+
+  Wire.begin(TARGET_ADDR);      // Join I2C bus as Target
+  Wire.onReceive(onReceiveEvent);
+  
+  Serial.println(TARGET_ADDR);
+}
+
+void loop() {
+  if(new_data) {
+    /* Why the local copy helps (defensive programming)
+    
+       The issue: “volatile + interrupt overlap”
+       - value1 and value2 are volatile byte globals.
+       - When the Controller sends a new message, the
+         ISR (receiveEvent) runs asynchronously.
+       - Suppose this happens midway through using the 
+         globals in loop():
+       
+       So making a copy of volatile variables to local ones 
+       to prevent ISR interference
+       
+       On 1-byte values, the risk is small:
+       - Reading a byte is atomic on 8-bit AVR (Uno/Nano)
+       - So you won’t get torn reads
+       On multi-byte variables (e.g., int, uint16_t) the read 
+       is non-atomic, and you could get half-updated values.
+       
+       This Guarantees 
+       - a consistent snapshot of the data at one instant.
+       - Avoids potential race conditions if ISR updates 
+         during processing.
+       - Scales safely if you later send 16-bit integers or 
+         arrays
+    */
+    byte local_data[NUM_BYTES];
+    for (byte i = 0; i < NUM_BYTES; i++) {
+      local_data[i] = i2c_data[i];
+    }
+    for (byte i = 0; i < NUM_BYTES; i++) {
+      Serial.print("Byte");
+      Serial.print(i+1);  // Add 1 to make the array intex print right
+      Serial.print(": ");
+      Serial.println(local_data[i]);
+    }
+    Serial.println();
+    
+    if(local_data[0] > 127){
+      digitalWrite(LED1_PIN, HIGH);
+    }else{
+      digitalWrite(LED1_PIN, LOW);    
+    }
+    if(local_data[1] > 127){
+      digitalWrite(LED2_PIN, HIGH);
+    }else{
+      digitalWrite(LED2_PIN, LOW);    
+    }
+    new_data = false;  // Clear flag early  
+  }
+  // Other non-blocking tasks can run here
+}
+
+// Interrupt Service Routine — very short
+void onReceiveEvent(int bytesReceived) {
+  // Read only as many bytes as buffer can hold
+  int n = bytesReceived > NUM_BYTES ? NUM_BYTES : bytesReceived;
+
+  for (int i = 0; i < n; i++) {
+    i2c_data[i] = Wire.read();
+  }
+  new_data = true;
+}
+
+*/
